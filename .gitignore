@@ -1,0 +1,14 @@
+# Gitignore for MacroPad project
+*.lck
+*.lock
+# KiCad lock files
+*.kicad_pro.lock
+*.kicad_sch.lock
+# KiCad backup and autosave files
+*_autosave.*
+*_backup.*
+# History and temporary files
+.history/
+hardware/.history/
+# Build artifacts
+build/

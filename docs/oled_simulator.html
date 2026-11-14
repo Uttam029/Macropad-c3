@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>MacroPad OLED UI Simulator</title>
+<style>
+  body { background:#111; color:#0f0; font-family:monospace; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }
+  canvas{ image-rendering:pixelated; width:384px; height:192px; background:#0a0a0a; border:1px solid #1a1a1a; }
+  button{ background:#1a1a1a; color:#00ff99; border:1px solid #00ff99; padding:5px 12px; border-radius:4px; cursor:pointer; font-family:monospace; margin:2px; }
+</style>
+</head>
+<body>
+<div style="display:flex; gap:32px; align-items:flex-start; flex-wrap:wrap;">
+  <div style="background:#0a0a0a; border:3px solid #333; border-radius:10px; padding:16px; box-shadow:0 0 20px #00ff9955;">
+    <canvas id="oled" width="128" height="64"></canvas>
+    <div style="margin-top:10px; display:flex; gap:8px; justify-content:center;">
+      <button onclick="setMode(1);render()">Mode 1</button>
+      <button onclick="setMode(2);render()">Mode 2</button>
+      <button id="conBtn" onclick="setConnected(!connected);render()">Disconnect</button>
+    </div>
+    <div style="margin-top:8px; display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">
+      <span style="color:#666; font-size:12px;">Press key:</span>
+      <button onclick="pressKey(1)">SW1 ↙</button>
+      <button onclick="pressKey(2)">SW5 ↗</button>
+      <button onclick="pressKey(3)">SW3 ↙</button>
+      <button onclick="pressKey(4)">SW2 ↘</button>
+      <button onclick="pressKey(0)">Release</button>
+    </div>
+  </div>
+  <div style="font-family:monospace; font-size:13px; color:#ccc;">
+    <h3>Key Bindings</h3>
+    <table>
+      <tr><th>Key</th><th>Mode 1</th><th>Mode 2</th></tr>
+      <tr><td>SW1 (bottom-left)</td><td>Alt+Tab</td><td>Ctrl+K,C</td></tr>
+      <tr><td>SW5 (top-right)</td><td>Screenshot</td><td>Ctrl+Z</td></tr>
+      <tr><td>SW3 (bottom-right)</td><td>Ctrl+C</td><td>Ctrl+J</td></tr>
+      <tr><td>SW2 (top-left)</td><td>Ctrl+V</td><td>Ctrl+B</td></tr>
+      <tr><td>Both rows</td><td>Switch Mode</td><td>Switch Mode</td></tr>
+      <tr><td>Encoder</td><td>Scroll wheel</td><td>Scroll wheel</td></tr>
+    </table>
+    <p>Filled square shows which key is currently held down.</p>
+  </div>
+</div>
+<script>
+const canvas=document.getElementById('oled');
+const ctx=canvas.getContext('2d');
+const W=128, H=64;
+let mode=1, connected=true, pos=0;
+const PIXEL_ON='#00ff99', PIXEL_OFF='#0a0a0a';
+function setMode(m){mode=m;}
+function setConnected(c){connected=c; document.getElementById('conBtn').textContent=c?'Disconnect':'Connect';}
+function pressKey(p){pos=p; render(); if(p!==0) setTimeout(()=>{pos=0;render();},500);}
+function render(){
+  ctx.fillStyle=PIXEL_OFF; ctx.fillRect(0,0,W,H);
+  const off=document.createElement('canvas'); off.width=H; off.height=W;
+  const g=off.getContext('2d'); g.fillStyle=PIXEL_OFF; g.fillRect(0,0,H,W);
+  g.fillStyle=PIXEL_ON; g.font='bold 7px monospace'; g.textBaseline='top';
+  function rFrame(vx,vy,vw,vh,fill){ g.beginPath(); g.roundRect(vx,vy,vw,vh,3);
+    if(fill){g.fillStyle=PIXEL_ON; g.fill();} else {g.strokeStyle=PIXEL_ON; g.lineWidth=1; g.stroke();}}
+  const sq=[{vx:90,vy:2,vw:34,vh:32},{vx:90,vy:32,vw:34,vh:32},{vx:56,vy:2,vw:34,vh:32},{vx:56,vy:32,vw:34,vh:32}];
+  const fillIdx=pos>=1?pos-1:-1; sq.forEach((s,i)=>rFrame(s.vx,s.vy,s.vw,s.vh,i===fillIdx));
+  g.fillStyle=PIXEL_ON; g.fillText(`Mode: ${mode}`,30,48);
+  const labels1=[{vx:104,vy:22,text:'PT'},{vx:104,vy:60,text:'Copy'},{vx:70,vy:22,text:'SS'},{vx:74,vy:56,text:'Tab'},{vx:64,vy:56,text:'alt'}];
+  const labels2=[{vx:104,vy:24,text:'exp'},{vx:104,vy:58,text:'Term'},{vx:70,vy:26,text:'Undo'},{vx:74,vy:56,text:''},{vx:70,vy:56,text:'/*/'}];
+  const labels=mode===1?labels1:labels2; labels.forEach(l=>{if(l.text) g.fillText(l.text,l.vx,l.vy);});
+  g.fillText('MacroPad',7,58);
+  g.font='10px monospace'; g.fillText(connected?'☑':'☐',5,18);
+  ctx.save(); ctx.translate(W,0); ctx.rotate(Math.PI/2); ctx.drawImage(off,0,0); ctx.restore();
+}
+render();
+</script>
+</body>
+</html>
